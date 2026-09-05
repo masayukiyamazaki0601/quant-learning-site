@@ -204,6 +204,35 @@
   panel.querySelector(".tw-head").addEventListener("dblclick", function () {
     resetPos(panel, PANEL_POS);
   });
+
+  // ---------- 会話履歴の保存（閉じても・ページを離れても続きから再開） ----------
+  function chatKey() { return "quant_tw_chat_" + (unitFile || "general"); }
+  function saveChat() {
+    try { localStorage.setItem(chatKey(), JSON.stringify(history)); } catch (e) { /* ignore */ }
+  }
+  function clearSavedChat() {
+    try { localStorage.removeItem(chatKey()); } catch (e) { /* ignore */ }
+  }
+  function loadSavedChat() {
+    try {
+      var arr = JSON.parse(localStorage.getItem(chatKey()));
+      if (Array.isArray(arr) && arr.length) {
+        return arr.filter(function (m) {
+          return (m.role === "user" || m.role === "assistant") &&
+                 typeof m.content === "string";
+        });
+      }
+    } catch (e) { /* ignore */ }
+    return null;
+  }
+  function renderHistory() {
+    clearBody();
+    for (var i = 0; i < history.length; i++) {
+      addMsg(history[i].role, history[i].content);
+    }
+    var b = $("tw-body");
+    b.scrollTop = b.scrollHeight;
+  }
     var SYSTEM =
     "あなたは個人学習サイト「Quant Learning」のソクラテス式家庭教師です。\n" +
     "相手は「中学校を卒業した数学の知識」しか持たない初心者です。\n" +
@@ -307,6 +336,7 @@
         var reply = data.choices[0].message.content.trim();
         addMsg("ai", reply);
         history.push({ role: "assistant", content: reply });
+        saveChat();
       })
       .catch(function (err) {
         cleanup();
@@ -345,6 +375,7 @@
   }
   function startChat() {
     if (!requireKey()) { return; }
+    clearSavedChat();
     history = [];
     started = true;
     addMsg("user", "▶ このUnitの理解度チェックを開始");
@@ -352,6 +383,7 @@
       role: "user",
       content: "このUnitを学び終えました。私の理解を確かめるために、ソクラテス式に質問を始めてください。まず最初の質問を1つだけください。"
     });
+    saveChat();
     loadPageContext().then(function () { post(); });
   }
   function sendUser(text) {
@@ -361,6 +393,7 @@
     if (!text.trim()) { return; }
     addMsg("user", text);
     history.push({ role: "user", content: text });
+    saveChat();
     post();
   }
 
@@ -370,6 +403,16 @@
     if (!panel.hidden) { panel.hidden = true; return; }
     panel.hidden = false;
     if (history.length) { return; } // 会話継続中はそのまま表示
+    // 保存済みの会話があれば続きから再開（ページを離れても大丈夫）
+    var saved = loadSavedChat();
+    if (saved && saved.length) {
+      history = saved;
+      started = true;
+      renderHistory();
+      addMeta("📎 前回の続きから再開しました");
+      if (!getKey()) { showKeyHint(); }
+      return;
+    }
     clearBody();
     if (!getKey()) {
       showKeyHint();
@@ -385,8 +428,15 @@
     setKey(v);
     $("tw-key-input").value = "";
     keybar.hidden = true;
-    clearBody();
-    startChat();
+    if (history.length) {
+      // 途中の会話がある場合は、そのまま続きから
+      clearBody();
+      renderHistory();
+      addMeta("✅ キーを保存しました。続きをどうぞ");
+    } else {
+      clearBody();
+      startChat();
+    }
   });
 
   $("tw-send").addEventListener("click", function () {
