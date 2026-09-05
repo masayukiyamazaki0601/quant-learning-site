@@ -101,3 +101,24 @@
 }
 .quiz-sound-toggle:hover { opacity: 0.85; }
 
+/* ---------- 日常でいうと…（身近なたとえボックス） ---------- */
+.md-typeset .daily-example {
+  border: 1px solid var(--md-default-fg-color--lightest, #d9d2be);
+  border-left: 4px solid var(--md-accent-fg-color, #a8793b);
+  border-radius: 0 10px 10px 0;
+  background: rgba(168, 121, 59, 0.07);
+  padding: 10px 16px 12px;
+  margin: 1.4em 0;
+  font-size: 0.92em;
+}
+.md-typeset .daily-example .daily-label {
+  font-weight: 700; margin: 0 0 4px;
+  color: var(--md-accent-fg-color--dark, #8a5f26);
+}
+.md-typeset .daily-example ul { margin: 0 0 0 1.1em; }
+.md-typeset .daily-example li { margin: 2px 0; }
+[data-md-color-scheme="slate"] .md-typeset .daily-example {
+  background: rgba(168, 121, 59, 0.15);
+  border-color: #4a3c28;
+}
+
