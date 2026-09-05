@@ -22,6 +22,30 @@ python3 -m venv .venv
 .venv/bin/mkdocs build
 ```
 
+## AI 家庭教師（ソクラテス式・ローカル専用）
+
+選択したUnitの内容を読んで、**答えを教えず質問で理解を確かめる**対話型チューターです（DeepSeek API 使用）。
+APIキーをブラウザに渡さないため、**ローカルで動かす小さなサーバー**方式です（GitHub Pages では動きません）。
+
+```bash
+# 1) 依存関係（初回のみ。既存の .venv に追加）
+.venv/bin/pip install -r tutor/requirements.txt
+
+# 2) APIキーを設定（tutor/.env.example をコピーしてキーを記入）
+cp tutor/.env.example tutor/.env
+#   → tutor/.env を開いて DEEPSEEK_API_KEY=sk-... を書く（.gitignore で除外済み）
+
+# 3) 起動
+.venv/bin/uvicorn tutor.app:app --port 8001
+
+# 4) ブラウザで開く
+#    http://127.0.0.1:8001/
+```
+
+- キーは https://platform.deepseek.com/ の「API Keys」で発行
+- ファイル: `tutor/app.py`（サーバー）/ `tutor/static/index.html`（画面）
+- ソクラテス式の指示は `app.py` の `SYSTEM_PROMPT` に集約されています（口調・深掘りの仕方などを調整可能）
+
 ## ディレクトリ構成
 
 ```

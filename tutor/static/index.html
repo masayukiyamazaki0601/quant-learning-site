@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ソクラテス式 AI 家庭教師 | Quant Learning</title>
+<style>
+  :root {
+    --paper:#F5F1E7; --surface:#FFFFFF; --ink:#16263B; --ink-soft:#41536B;
+    --line:#DCD5C2; --brass:#A8793B; --brass-dark:#8A5F26; --navy:#101C2E;
+    --green:#1E6F50; --red:#B4432F;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background:var(--paper); color:var(--ink);
+    font-family:"Noto Sans JP", "Hiragino Kaku Gothic ProN", sans-serif;
+    line-height:1.9; font-size:16px;
+  }
+  header {
+    background:var(--navy); color:#F3EFE4;
+    border-bottom:3px solid var(--brass);
+    padding:14px 24px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  }
+  .logo { font-weight:700; letter-spacing:.02em; }
+  .logo a { color:inherit; text-decoration:none; }
+  .logo small { color:var(--brass); font-size:11px; letter-spacing:2px; margin-left:8px; }
+  main { max-width:820px; margin:0 auto; padding:24px 18px 60px; }
+  .intro { background:var(--surface); border:1px solid var(--line); border-radius:12px;
+           padding:16px 20px; margin-bottom:18px; font-size:14.5px; color:var(--ink-soft); }
+  .intro strong { color:var(--ink); }
+  .panel { background:var(--surface); border:1px solid var(--line); border-radius:12px;
+           padding:16px 20px; margin-bottom:18px; }
+  .panel label { font-weight:700; font-size:14px; display:block; margin-bottom:8px; }
+  select, input[type="text"] {
+    font-family:inherit; font-size:15px; padding:10px 12px;
+    border:1px solid var(--line); border-radius:8px; background:#fff; color:var(--ink);
+    width:100%;
+  }
+  .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  button {
+    font-family:inherit; font-weight:700; font-size:14px; cursor:pointer;
+    border:none; border-radius:8px; padding:11px 20px;
+  }
+  .btn-primary { background:var(--brass); color:#fff; }
+  .btn-primary:hover { background:var(--brass-dark); }
+  .btn-ghost { background:#F0F2F5; color:var(--ink); border:1px solid var(--line); }
+  .btn-ghost:hover { background:#e4e8ee; }
+  .keynote { font-size:12.5px; color:var(--ink-soft); margin-top:8px; }
+  .keynote.bad { color:var(--red); }
+  .chat { display:flex; flex-direction:column; gap:12px; margin:18px 0; }
+  .msg { max-width:86%; padding:12px 16px; border-radius:14px; font-size:15px;
+         white-space:pre-wrap; word-break:break-word; }
+  .msg.user { align-self:flex-end; background:var(--navy); color:#fff;
+              border-bottom-right-radius:4px; }
+  .msg.ai { align-self:flex-start; background:var(--surface); border:1px solid var(--line);
+            border-bottom-left-radius:4px; }
+  .msg.ai .who { display:block; font-size:11px; color:var(--brass-dark);
+                 font-weight:700; margin-bottom:4px; letter-spacing:1px; }
+  .msg.thinking { color:var(--ink-soft); font-style:italic; background:#f0ecdf; }
+  .composer { display:flex; gap:10px; }
+  .composer input { flex:1; }
+  .quick { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+  .quick button { padding:7px 14px; font-size:12.5px; }
+  .error { background:#FAEFEB; border:1px solid var(--red); color:var(--red);
+           border-radius:10px; padding:12px 16px; margin-top:14px; font-size:14px; }
+  .hidden { display:none; }
+  footer { text-align:center; color:var(--ink-soft); font-size:12.5px;
+           padding:20px; border-top:1px solid var(--line); }
+  .loader { display:inline-block; width:14px; height:14px; border:2px solid var(--line);
+            border-top-color:var(--brass); border-radius:50%; animation:spin .8s linear infinite;
+            margin-right:6px; vertical-align:-2px; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo"><a href="/">Quant Learning</a><small>AI 家庭教師（ソクラテス式）</small></div>
+</header>
+<main>
+  <div class="intro">
+    <strong>答えは教えません。</strong>あなたの言葉で答えてもらい、間違いは「なぜ？」で気づかせ、正解は1段階深く掘り下げます。
+    学んでいるUnitを選んで「始める」を押すと、そのUnitの内容に沿った最初の質問がきます。
+  </div>
+
+  <div class="panel">
+    <label for="unit-select">📖 いま学んでいるUnit</label>
+    <div class="row">
+      <select id="unit-select"></select>
+      <button id="start-btn" class="btn-primary">▶ このUnitで家庭教師を始める</button>
+    </div>
+    <div id="keynote" class="keynote">サーバー接続を確認中…</div>
+  </div>
+
+  <div id="chat" class="chat" aria-live="polite"></div>
+
+  <div class="composer">
+    <input type="text" id="user-input"
+           placeholder="答えを入力…（「ヒント」「もっとやさしく」もOK）" autocomplete="off">
+    <button id="send-btn" class="btn-primary">送信</button>
+  </div>
+  <div class="quick">
+    <button type="button" data-q="ヒント">💡 ヒント</button>
+    <button type="button" data-q="もっとやさしく、身近な例で説明して">🌱 やさしく</button>
+    <button type="button" data-q="ここまで分かったことを、自分の言葉でまとめたい">📝 まとめたい</button>
+    <button type="button" id="reset-btn" class="btn-ghost">🔄 最初から</button>
+  </div>
+
+  <div id="error-box" class="error hidden"></div>
+</main>
+<footer>DeepSeek API を利用したローカル専用の家庭教師です（APIキーはブラウザに送信されません）</footer>
+<script>
+"use strict";
+/* ---------- ユニット一覧（docs/javascripts/data.js と同じ構成） ---------- */
+var PHASES = [
+  { id: 1, label: "フェーズ1 土台構築", titles: [
+    "学習の設計と開発環境", "1変数微積分と市場の全体像", "多変数微積分と時間の価値",
+    "線形代数(1)と債券計算", "線形代数(2)とリターンの統計", "条件付き確率・ベイズとデータ取得",
+    "分布・期待値とポートフォリオ", "大数の法則・中心極限定理と分散効果", "推定と先物・先渡",
+    "仮説検定とオプションの基本", "線形回帰と実データ分析", "統計の実践・分析レポート課題",
+    "フェーズ1の総復習と確認"
+  ]},
+  { id: 2, label: "フェーズ2 確率解析とデリバティブ", titles: [
+    "二項モデルと無裁定の考え方", "多期間二項モデルとマルチンゲール", "アメリカン・オプションと早期行使",
+    "ブラウン運動とマルチンゲール", "伊藤のレンマと幾何ブラウン運動", "測度変換とリスク中立評価",
+    "Black-Scholesと偏微分方程式", "Greeksとインプライド・ボラティリティ", "モンテカルロ法による価格付け",
+    "分散低減法", "有限差分法", "パス依存型オプション", "フェーズ2の総復習・エンジン検証"
+  ]},
+  { id: 3, label: "フェーズ3 時系列・リスク・ML・C++", titles: [
+    "時系列の基礎（定常性と自己相関）", "ARIMAモデル", "GARCHとボラティリティ予測",
+    "VaRと期待ショートフォール", "共和分とペアトレード", "ポートフォリオ最適化",
+    "因子モデルとPCA", "バックテストの正しい設計", "機械学習の基礎と評価",
+    "決定木と勾配ブースティング", "C++入門", "C++で価格エンジンを作る", "フェーズ3の総復習"
+  ]},
+  { id: 4, label: "フェーズ4 統合Capstoneとキャリア", titles: [
+    "戦略のポートフォリオ化", "マーケットマイクロストラクチャー", "論文再現プロジェクト",
+    "機械学習戦略の本実装", "Capstoneの設計", "Capstone: データ層", "Capstone: リサーチ層",
+    "Capstone: 検証・リスク層", "Capstone: 表示・API", "面接対策(1) 数学・確率",
+    "面接対策(2) コーディングと金融", "アウトプット整備", "最終プレゼンと次年度計画"
+  ]}
+];
+function pad(n) { return (n < 10 ? "0" : "") + n; }
+
+function buildSelect() {
+  var sel = document.getElementById("unit-select");
+  PHASES.forEach(function (ph) {
+    var og = document.createElement("optgroup");
+    og.label = ph.label;
+    ph.titles.forEach(function (title, i) {
+      var o = document.createElement("option");
+      o.value = "p" + ph.id + "/p" + ph.id + "-" + pad(i + 1) + ".md";
+      o.textContent = "Unit " + pad(i + 1) + " " + title;
+      og.appendChild(o);
+    });
+    sel.appendChild(og);
+  });
+  sel.value = "p1/p1-03.md"; // 初期表示: 公開中のUnit
+}
+buildSelect();
+/* ---------- 対話ロジック ---------- */
+var history = [];
+var busy = false;
+
+function $(id) { return document.getElementById(id); }
+function esc(s) {
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;")
+                  .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+function addMsg(role, text) {
+  var chat = $("chat");
+  var div = document.createElement("div");
+  div.className = "msg " + role;
+  if (role === "ai") {
+    var who = document.createElement("span");
+    who.className = "who";
+    who.textContent = "🎓 家庭教師";
+    div.appendChild(who);
+  }
+  div.appendChild(document.createTextNode(text));
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+  return div;
+}
+function showError(text) {
+  var box = $("error-box");
+  box.textContent = text;
+  box.classList.remove("hidden");
+}
+function clearError() { $("error-box").classList.add("hidden"); }
+
+function post(historyArr, after) {
+  busy = true;
+  $("send-btn").disabled = true;
+  clearError();
+  var think = addMsg("ai", "");
+  think.classList.add("thinking");
+  think.textContent = "考え中…";
+
+  fetch("/api/tutor", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      unit_file: $("unit-select").value,
+      history: historyArr
+    })
+  })
+    .then(function (res) {
+      return res.json().then(function (data) {
+        if (!res.ok) {
+          throw new Error(data.error || ("HTTP " + res.status));
+        }
+        return data;
+      });
+    })
+    .then(function (data) {
+      if (think.parentNode) { think.parentNode.removeChild(think); }
+      addMsg("ai", data.reply);
+      historyArr.push({ role: "assistant", content: data.reply });
+      if (after) { after(); }
+    })
+    .catch(function (err) {
+      if (think.parentNode) { think.parentNode.removeChild(think); }
+      showError(err.message);
+    })
+    .finally(function () {
+      busy = false;
+      $("send-btn").disabled = false;
+    });
+}
+
+function sendUser(text) {
+  if (!text.trim() || busy) { return; }
+  addMsg("user", text);
+  history.push({ role: "user", content: text });
+  post(history);
+}
+
+/* 開始ボタン：まず最初の質問を1つ引き出す */
+$("start-btn").addEventListener("click", function () {
+  history = [];
+  $("chat").innerHTML = "";
+  addMsg("user", "▶「" + $("unit-select").selectedOptions[0].textContent + "」の理解度チェックを開始");
+  history.push({
+    role: "user",
+    content: "このUnitを学び終えました。私の理解を確かめるために、ソクラテス式に質問を始めてください。まず最初の質問を1つだけください。"
+  });
+  post(history);
+});
+
+/* 送信ボタン / Enter / クイックボタン */
+$("send-btn").addEventListener("click", function () {
+  sendUser($("user-input").value);
+  $("user-input").value = "";
+});
+$("user-input").addEventListener("keydown", function (e) {
+  if (e.key === "Enter") {
+    sendUser(this.value);
+    this.value = "";
+  }
+});
+document.querySelectorAll(".quick button[data-q]").forEach(function (btn) {
+  btn.addEventListener("click", function () {
+    sendUser(btn.getAttribute("data-q"));
+  });
+});
+$("reset-btn").addEventListener("click", function () {
+  history = [];
+  $("chat").innerHTML = "";
+  clearError();
+  addMsg("ai", "最初からやり直します。「▶ このUnitで家庭教師を始める」を押してください。");
+});
+
+/* サーバー接続・APIキー状態の確認 */
+fetch("/api/status")
+  .then(function (r) { return r.json(); })
+  .then(function (s) {
+    var k = $("keynote");
+    if (s.key_set) {
+      k.textContent = "✅ DeepSeek API キー設定済み。対話できます。";
+      k.className = "keynote";
+    } else {
+      k.textContent = "⚠️ APIキー未設定 → tutor/.env に DEEPSEEK_API_KEY を書いてサーバーを再起動してください。";
+      k.className = "keynote bad";
+    }
+  })
+  .catch(function () {
+    var k = $("keynote");
+    k.textContent = "⚠️ サーバーに接続できません。uvicorn を起動してから開いてください。";
+    k.className = "keynote bad";
+  });
+</script>
+</body>
+</html>
