@@ -34,6 +34,7 @@
   var COL_INK = "#16263B";
   var COL_BRASS = "#A8793B";
   var COL_RED = "#B4432F";
+  var COL_GREEN = "#1E6F50";
 
   function baseLayout(extra) {
     var L = {
