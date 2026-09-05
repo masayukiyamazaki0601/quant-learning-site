@@ -1,0 +1,85 @@
+# Quant Learning — 自分用クオンツ学習サイト（MkDocs Material）
+site_name: Quant Learning
+site_description: 未経験から1年で実務応用レベルの金融クオンツ知識を身につけるための自分用学習サイト
+site_url: ""
+
+docs_dir: docs
+site_dir: site
+
+theme:
+  name: material
+  language: ja
+  features:
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - navigation.footer
+    - toc.follow
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.tabs.link
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/weather-night
+        name: ダークモードに切り替え
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/weather-sunny
+        name: ライトモードに切り替え
+  font:
+    text: Noto Sans JP
+    code: JetBrains Mono
+  icon:
+    logo: material/chart-line-variant
+
+extra_css:
+  - stylesheets/extra.css
+
+plugins:
+  - search
+  - tags
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: true
+
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js
+
+extra:
+  generator: false
+
+copyright: |
+  &copy; 2026 Quant Learning — 自分用の理解サイト。テキストは随時「自分の言葉」に書き換えていく。
+
+nav:
+  - ホーム: index.md
+  - ロードマップ:
+      - カリキュラムの歩き方: roadmap/index.md
+      - 全体設計（52週）: roadmap/overview.md
+      - フェーズ1 土台構築: roadmap/phase-1.md
+      - フェーズ2 確率解析と価格理論: roadmap/phase-2.md
+      - フェーズ3 時系列・リスク・ML・C++: roadmap/phase-3.md
+      - フェーズ4 統合Capstone: roadmap/phase-4.md

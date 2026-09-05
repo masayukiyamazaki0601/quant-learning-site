@@ -1,0 +1,28 @@
+/* Quant Learning 配色オーバーライド（紙 × 紺 × ブラス） */
+:root {
+  --md-primary-fg-color: #16263B;
+  --md-primary-fg-color--light: #41536B;
+  --md-primary-fg-color--dark: #101C2E;
+  --md-accent-fg-color: #A8793B;
+  --md-accent-fg-color--light: #C9A46B;
+  --md-accent-fg-color--dark: #8A5F26;
+}
+
+/* ページ背景を少し「紙」寄りに（ダーク時はそのまま slate） */
+[data-md-color-scheme="default"] {
+  --md-default-bg-color: #FBF9F3;
+}
+
+/* ステータス表記（予定・制作中・公開中） */
+.tag-plan { color: #7C8CA0; }
+.tag-wip  { color: #B7791F; }
+.tag-done { color: #1E6F50; }
+
+/* 目次ページのカード的な区切り */
+.md-typeset .roadmap-card {
+  border: 1px solid var(--md-default-fg-color--lightest, #ddd6c6);
+  border-radius: 10px;
+  padding: 4px 20px 12px;
+  margin: 0 0 20px;
+  background: rgba(168, 121, 59, 0.05);
+}
