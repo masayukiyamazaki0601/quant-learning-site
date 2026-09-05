@@ -57,6 +57,8 @@
   .msg.ai .who { display:block; font-size:11px; color:var(--brass-dark);
                  font-weight:700; margin-bottom:4px; letter-spacing:1px; }
   .msg.thinking { color:var(--ink-soft); font-style:italic; background:#f0ecdf; }
+  .meta-line { text-align:center; font-size:11.5px; color:#8b93a0;
+               margin:2px 0 0; letter-spacing:.5px; }
   .composer { display:flex; gap:10px; }
   .composer input { flex:1; }
   .quick { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
@@ -187,13 +189,35 @@ function showError(text) {
 }
 function clearError() { $("error-box").classList.add("hidden"); }
 
-function post(historyArr, after) {
+function post(historyArr) {
   busy = true;
   $("send-btn").disabled = true;
   clearError();
+  var started = Date.now();
   var think = addMsg("ai", "");
   think.classList.add("thinking");
-  think.textContent = "考え中…";
+  think.textContent = "🧠 思考中… 0秒";
+  var counter = 0;
+  var timer = setInterval(function () {
+    counter++;
+    think.textContent = "🧠 思考中… " + counter + "秒";
+  }, 1000);
+
+  function stopTimer() { clearInterval(timer); }
+  function removeThink() {
+    if (think.parentNode) { think.parentNode.removeChild(think); }
+  }
+  function addMetaLine(text) {
+    var chat = $("chat");
+    var m = document.createElement("div");
+    m.className = "meta-line";
+    m.textContent = text;
+    chat.appendChild(m);
+    chat.scrollTop = chat.scrollHeight;
+  }
+  function secondsTaken() {
+    return Math.max(1, Math.round((Date.now() - started) / 1000));
+  }
 
   fetch("/api/tutor", {
     method: "POST",
@@ -212,13 +236,15 @@ function post(historyArr, after) {
       });
     })
     .then(function (data) {
-      if (think.parentNode) { think.parentNode.removeChild(think); }
+      stopTimer();
+      removeThink();
+      addMetaLine("⏱ " + secondsTaken() + " 秒間思考しました");
       addMsg("ai", data.reply);
       historyArr.push({ role: "assistant", content: data.reply });
-      if (after) { after(); }
     })
     .catch(function (err) {
-      if (think.parentNode) { think.parentNode.removeChild(think); }
+      stopTimer();
+      removeThink();
       showError(err.message);
     })
     .finally(function () {
