@@ -37,7 +37,7 @@ theme:
     logo: material/chart-line-variant
 
 extra_css:
-  - stylesheets/extra.css
+  - stylesheets/extra.css?v=2
 
 plugins:
   - search

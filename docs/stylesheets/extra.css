@@ -188,6 +188,12 @@
   /* チャット欄のサイズ */
   --tw-panel-width: 400px;
   --tw-panel-height: 620px;
+  /* 文字サイズ（ここで一括調整できます） */
+  --tw-font-size: 15px;         /* チャット本文 */
+  --tw-head-font-size: 15px;    /* ヘッダー（🎓 AI家庭教師） */
+  --tw-input-font-size: 15px;   /* 入力欄 */
+  --tw-quick-font-size: 13px;   /* 💡ヒント などのボタン */
+  --tw-meta-font-size: 12px;    /* 「⏱ n秒間思考しました」 */
 }
 #tw-fab {
   position: fixed; right: var(--tw-fab-right); left: var(--tw-fab-left);
@@ -207,12 +213,13 @@
   background: #f7f4ea; border: 1px solid #dcd5c2; border-radius: 14px;
   overflow: hidden; box-shadow: 0 10px 40px rgba(16, 28, 46, 0.25);
   font-family: "Noto Sans JP", "Hiragino Kaku Gothic ProN", sans-serif;
-  font-size: 13.5px; line-height: 1.7; color: #16263b;
+  font-size: var(--tw-font-size, 15px); line-height: 1.7; color: #16263b;
 }
 .tw-head {
   display: flex; justify-content: space-between; align-items: center; gap: 8px;
   background: var(--md-primary-fg-color, #16263b); color: #fff;
   padding: 9px 14px; font-weight: 700;
+  font-size: var(--tw-head-font-size, 15px);
 }
 .tw-head small { color: #c9d2de; font-weight: 400; }
 #tw-close { background: none; border: none; color: #fff; font-size: 16px; cursor: pointer; }
@@ -223,19 +230,19 @@
                border-bottom-right-radius: 3px; }
 .tw-msg.ai { align-self: flex-start; background: #fff; border: 1px solid #e3dcc8;
              border-bottom-left-radius: 3px; }
-.tw-meta { align-self: center; font-size: 10.5px; color: #8b93a0; }
+.tw-meta { align-self: center; font-size: var(--tw-meta-font-size, 12px); color: #8b93a0; }
 .tw-think { color: #8b93a0; font-style: italic; }
-.tw-note { font-size: 11.5px; color: #b4432f; background: #fdf3ef;
+.tw-note { font-size: 13px; color: #b4432f; background: #fdf3ef;
            border: 1px solid #ecc9bd; border-radius: 8px; padding: 8px 10px; }
 .tw-quick { display: flex; gap: 6px; padding: 6px 8px; flex-wrap: wrap;
             border-top: 1px solid #e9e2d0; background: #fbf9f3; }
-.tw-quick button { font-family: inherit; font-size: 0.74rem; padding: 4px 10px;
+.tw-quick button { font-family: inherit; font-size: var(--tw-quick-font-size, 13px); padding: 4px 10px;
   border-radius: 999px; border: 1px solid #d5ccb4; background: #fff;
   color: #16263b; cursor: pointer; }
 .tw-quick button:hover { border-color: var(--md-accent-fg-color, #a8793b); }
 .tw-input { display: flex; gap: 6px; padding: 8px; border-top: 1px solid #e9e2d0;
             background: #fff; }
-.tw-input input { flex: 1; min-width: 0; font-family: inherit; font-size: 0.85rem;
+.tw-input input { flex: 1; min-width: 0; font-family: inherit; font-size: var(--tw-input-font-size, 15px);
   padding: 8px 10px; border: 1px solid #d5ccb4; border-radius: 8px; color: #16263b; }
 .tw-input button { background: var(--md-accent-fg-color, #a8793b); color: #fff;
   border: none; border-radius: 8px; padding: 0 14px; font-weight: 700; cursor: pointer;
@@ -252,7 +259,7 @@
 }
 #tw-panel .tw-keyrow { display: flex; gap: 6px; }
 #tw-panel .tw-keyrow input {
-  flex: 1; min-width: 0; font-family: inherit; font-size: 0.8rem;
+  flex: 1; min-width: 0; font-family: inherit; font-size: var(--tw-input-font-size, 15px);
   padding: 7px 9px; border: 1px solid #d5ccb4; border-radius: 8px; color: #16263b;
 }
 #tw-panel .tw-keyrow button {
@@ -260,7 +267,7 @@
   padding: 0 14px; font-weight: 700; cursor: pointer; font-family: inherit;
 }
 #tw-panel .tw-keynote {
-  font-size: 10px; color: #8b6a34; margin-top: 5px; line-height: 1.6;
+  font-size: 11.5px; color: #8b6a34; margin-top: 5px; line-height: 1.6;
 }
 
 /* ドラッグ移動対応 */
