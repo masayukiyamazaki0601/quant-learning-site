@@ -122,3 +122,53 @@
   border-color: #4a3c28;
 }
 
+/* ---------- 動く図（Plotly） ---------- */
+.plotbox { margin: 1.8em 0; }
+.plotly-chart {
+  width: 100%; height: 420px;
+  background: #ffffff;
+  border: 1px solid #d9d2be;
+  border-radius: 10px;
+  overflow: hidden;
+}
+.plotctl {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  margin-top: 8px;
+}
+.plot-play {
+  font-family: inherit; font-size: 0.85rem; font-weight: 700;
+  color: #fff; background: var(--md-accent-fg-color, #a8793b);
+  border: none; border-radius: 6px; padding: 6px 16px;
+  cursor: pointer;
+}
+.plot-play:hover { opacity: 0.85; }
+.plot-status {
+  font-size: 0.85rem; font-weight: 600;
+  color: var(--md-typeset-color, #16263b);
+}
+.figure-caption {
+  font-size: 0.8rem; color: var(--md-typeset-color, #41536b);
+  text-align: center; margin: 6px 0 2px;
+}
+
+/* ---------- 市場の構造図（2パネル） ---------- */
+.market-map {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+  margin: 1.4em 0;
+}
+.mm-panel {
+  border: 1px solid var(--md-default-fg-color--lightest, #d9d2be);
+  border-radius: 10px; overflow: hidden;
+  background: var(--md-default-bg-color);
+}
+.mm-head {
+  padding: 8px 14px; font-weight: 700;
+  background: rgba(168, 121, 59, 0.15);
+}
+.mm-item {
+  padding: 7px 14px; font-size: 0.9rem;
+  border-top: 1px dashed var(--md-default-fg-color--lightest, #e0d9c6);
+}
+.mm-item strong { display: inline-block; min-width: 3.2em; }
+@media (max-width: 720px) { .market-map { grid-template-columns: 1fr; } }
+
