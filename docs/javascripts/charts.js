@@ -11,24 +11,56 @@
 (function () {
   "use strict";
 
-  var CDN = "https://cdn.plot.ly/plotly-2.32.0.min.js";
+  var CDNS = [
+    "https://cdn.plot.ly/plotly-2.32.0.min.js",
+    "https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.32.0/plotly.min.js",
+    "https://unpkg.com/plotly.js-dist-min@2.32.0/plotly.min.js"
+  ];
+  var cdnIndex = 0;
   var loading = false;
   var waiting = [];
 
+  function flushQueue() {
+    var q = waiting; waiting = [];
+    for (var i = 0; i < q.length; i++) { q[i](); }
+  }
+  function failAllCDN() {
+    waiting = [];
+    console.error("Plotly CDN がすべて失敗しました");
+    var sts = document.querySelectorAll(".plotbox .plot-status");
+    for (var i = 0; i < sts.length; i++) {
+      sts[i].textContent = "図の読み込みに失敗しました（Plotly のCDNに接続できません）";
+    }
+  }
+  function tryLoad() {
+    loading = true;
+    var s = document.createElement("script");
+    s.src = CDNS[cdnIndex];
+    s.onload = function () {
+      loading = false;
+      if (window.Plotly) {
+        flushQueue();
+      } else if (cdnIndex + 1 < CDNS.length) {
+        cdnIndex++; tryLoad();
+      } else {
+        failAllCDN();
+      }
+    };
+    s.onerror = function () {
+      loading = false;
+      if (cdnIndex + 1 < CDNS.length) {
+        cdnIndex++; tryLoad();
+      } else {
+        failAllCDN();
+      }
+    };
+    document.head.appendChild(s);
+  }
   function loadPlotly(cb) {
     if (window.Plotly) { cb(); return; }
     waiting.push(cb);
     if (loading) { return; }
-    loading = true;
-    var s = document.createElement("script");
-    s.src = CDN;
-    s.onload = function () {
-      loading = false;
-      var q = waiting; waiting = [];
-      for (var i = 0; i < q.length; i++) { q[i](); }
-    };
-    s.onerror = function () { loading = false; waiting = []; };
-    document.head.appendChild(s);
+    tryLoad();
   }
 
   var COL_INK = "#16263B";
@@ -304,10 +336,15 @@
           if (!el) { return; }
           if (running) { stop(); return; }
           if (!btn.getAttribute("data-rendered")) {
-            var base = def.init();
-            Plotly.newPlot(el, base.data, base.layout, { responsive: true, displayModeBar: false });
-            btn.setAttribute("data-rendered", "1");
-            if (statusEl) { statusEl.textContent = def.status(0); }
+            try {
+              var base = def.init();
+              Plotly.newPlot(el, base.data, base.layout, { responsive: true, displayModeBar: false });
+              btn.setAttribute("data-rendered", "1");
+              if (statusEl) { statusEl.textContent = def.status(0); }
+            } catch (err) {
+              console.error("図の描画エラー (" + targetId + "):", err);
+              if (statusEl) { statusEl.textContent = "図の描画に失敗しました：" + err.message; }
+            }
           }
           running = true;
           idx = 0;
@@ -327,10 +364,15 @@
       var def = CH[el.id];
       if (!def || !def.init) { return; }
       loadPlotly(function () {
-        var base = def.init();
-        Plotly.newPlot(el, base.data, base.layout, { responsive: true, displayModeBar: false });
         var st = box.querySelector(".plot-status");
-        if (st && def.status) { st.textContent = def.status(0); }
+        try {
+          var base = def.init();
+          Plotly.newPlot(el, base.data, base.layout, { responsive: true, displayModeBar: false });
+          if (st && def.status) { st.textContent = def.status(0); }
+        } catch (err) {
+          console.error("図の描画エラー (" + el.id + "):", err);
+          if (st) { st.textContent = "図の描画に失敗しました：" + err.message; }
+        }
       });
     })(autos[a]);
   }
