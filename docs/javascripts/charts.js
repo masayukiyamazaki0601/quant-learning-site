@@ -289,13 +289,73 @@
     };
   }
 
+  /* ---------- ⑥ 債券のデュレーション：金利を上げると価格が下がる ---------- */
+  function durationDef() {
+    var rates = [0.01, 0.03, 0.05, 0.08, 0.10];
+    var YEARS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+    function calc(r) {
+      var pvs = [], weighted = 0, price = 0;
+      for (var t = 1; t <= 10; t++) {
+        var cf = (t === 10) ? 105 : 5; // 毎年5万円＋10年目に額面100万円
+        var pv = cf / Math.pow(1 + r, t);
+        pvs.push(+pv.toFixed(3));
+        price += pv;
+        weighted += t * pv;
+      }
+      return { pvs: pvs, price: price, dur: weighted / price };
+    }
+    function status(r) {
+      var c = calc(r);
+      return "金利 " + (r * 100) + "% → 債券の価格 ≈ " + c.price.toFixed(1) +
+             "万円 / デュレーション ≈ " + c.dur.toFixed(1) + "年";
+    }
+    function figure(r) {
+      var c = calc(r);
+      return {
+        data: [{
+          x: YEARS, y: c.pvs, type: "bar",
+          marker: { color: COL_BRASS, opacity: 0.7 }
+        }],
+        layout: {
+          margin: { l: 52, r: 16, t: 46, b: 46 },
+          paper_bgcolor: "#FFFFFF", plot_bgcolor: "#FFFFFF",
+          font: { color: COL_INK, size: 13 },
+          xaxis: { range: [0.3, 10.7], title: "年目", dtick: 1 },
+          yaxis: { title: "各年の現在価値（万円）" },
+          showlegend: false,
+          annotations: [{
+            xref: "paper", yref: "paper", x: 0.01, y: 1.16,
+            xanchor: "left", yanchor: "top", showarrow: false, text: status(r)
+          }],
+          shapes: [{
+            type: "line", x0: c.dur, x1: c.dur, y0: 0, y1: 1, yref: "paper",
+            line: { color: COL_RED, width: 3, dash: "dot" }
+          }]
+        }
+      };
+    }
+    return {
+      init: function () { return figure(rates[0]); },
+      count: rates.length,
+      status: function (i) { return status(rates[i]); },
+      tick: function (i) {
+        var f = figure(rates[i]);
+        return {
+          sets: [{ index: 0, data: f.data[0] }],
+          layout: { annotations: f.layout.annotations, shapes: f.layout.shapes }
+        };
+      }
+    };
+  }
+
   /* ---------- 図の登録（id 名で呼び出し） ---------- */
   var CH = {
     "chart-slope": slopeDef(),
     "chart-riemann": riemannDef(),
     "chart-taylor": taylorDef(),
     "chart-wage": wageDef(),
-    "chart-pv": pvDef()
+    "chart-pv": pvDef(),
+    "chart-duration": durationDef()
   };
 
   /* ---------- ▶再生 コントローラー ---------- */
