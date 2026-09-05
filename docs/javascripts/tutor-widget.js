@@ -1,29 +1,39 @@
 /* ==========================================================================
-   Quant Learning — AI家庭教師ウィジェット
-   ・全ページ右下に「🎓 家庭教師に聞く」ボタンを表示
-   ・Unit ページ（/units/pN/pN-NN/）なら Unit を自動認識し、本文をコンテキストに
-     ソクラテス式の質問を開始
-   ・バックエンド: tutor サーバー（uvicorn tutor.app:app --port 8001）が
-     ローカルで動いている必要がある（APIキーはサーバー側のみで管理）
+   Quant Learning — AI家庭教師ウィジェット（ブラウザ完結版）
+   - DeepSeek API にブラウザから直接アクセスする（CORS許可済みを確認）
+   - ローカルサーバー不要。github.io の公開ページでそのまま使える
+   - APIキーは初回に1度だけ入力し、ブラウザの localStorage に保存
+     （キーを GitHub やサーバーに送ることはない）
+   - 開いている Unit ページの本文を自動で読み込み、ソクラテス式の質問をする
    ========================================================================== */
 (function () {
   "use strict";
   if (window.__tutorWidgetLoaded) { return; }
   window.__tutorWidgetLoaded = true;
 
-  var API = location.protocol + "//127.0.0.1:8001";
+  var DS_URL = "https://api.deepseek.com/chat/completions";
+  var DS_MODEL = "deepseek-chat";
+  var KEY_LS = "quant_ds_key";
+
   var unitFile = "";
+  var unitTitle = "";
   var history = [];
   var busy = false;
   var started = false;
+  var pageContext = null;
 
   // URL から Unit を自動認識（例: /units/p1/p1-03/ → p1/p1-03.md）
   var m = location.pathname.match(/\/units\/p([1-4])\/p\1-(\d{2})(?:[\/.]|$)/);
   if (m) {
     unitFile = "p" + m[1] + "/p" + m[1] + "-" + m[2] + ".md";
+    unitTitle = document.title.replace(/\s*[-|]\s*Quant Learning.*$/, "").trim();
   }
 
   function $(id) { return document.getElementById(id); }
+  function getKey() { return localStorage.getItem(KEY_LS) || ""; }
+  function setKey(v) {
+    if (v) { localStorage.setItem(KEY_LS, v.trim()); } else { localStorage.removeItem(KEY_LS); }
+  }
   function make(html) {
     var d = document.createElement("div");
     d.innerHTML = html.trim();
@@ -59,6 +69,9 @@
     b.appendChild(el);
     b.scrollTop = b.scrollHeight;
   }
+  function clearBody() {
+    $("tw-body").innerHTML = "";
+  }
   function setBusy(v) {
     busy = v;
     $("tw-send").disabled = v;
@@ -71,9 +84,16 @@
       '<div id="tw-panel" hidden>' +
         '<div class="tw-head">' +
           '<span>🎓 AI家庭教師 <small id="tw-unit-label">' +
-            (unitFile ? unitFile.replace(".md", "") : "汎用モード（Unit外のページ）") +
+            (unitTitle || "汎用モード（Unit外のページ）") +
           "</small></span>" +
           '<button id="tw-close" type="button" aria-label="閉じる">✕</button>' +
+        "</div>" +
+        '<div class="tw-keybar" id="tw-keybar" hidden>' +
+          '<div class="tw-keyrow">' +
+            '<input id="tw-key-input" type="password" placeholder="DeepSeek APIキーを貼り付け（初回のみ）">' +
+            '<button id="tw-key-save" type="button">保存</button>' +
+          "</div>" +
+          '<div class="tw-keynote">キーはこのブラウザにだけ保存されます（GitHub やサーバーには送信しません）。取得: platform.deepseek.com → API Keys</div>' +
         "</div>" +
         '<div class="tw-body" id="tw-body"></div>' +
         '<div class="tw-quick">' +
@@ -92,13 +112,59 @@
   document.body.appendChild(root);
 
   var panel = $("tw-panel");
-    // ---------- API通信 ----------
-  function apiStatus(cb) {
-    fetch(API + "/api/status")
-      .then(function (r) { return r.json(); })
-      .then(cb)
-      .catch(function () { cb(null); });
+  var keybar = $("tw-keybar");
+    var SYSTEM =
+    "あなたは個人学習サイト「Quant Learning」のソクラテス式家庭教師です。\n" +
+    "相手は「中学校を卒業した数学の知識」しか持たない初心者です。\n" +
+    "【ルール】\n" +
+    "1. 答えを先に言わない。まず質問を1つだけ投げ、相手の答えを待つ。\n" +
+    "2. 質問には必ず「設問1」「設問2」…と番号を振る。\n" +
+    "3. 各設問は「(a) 具体的な数字を使った計算問題」と「(b) なぜそうなる？(式のどの部分に対応するか理由を添えて)」のセットで出す。\n" +
+    "4. 正解なら「正解です」とほめて理由を1〜2文補足し、条件を逆転させた発展問題へ進む。\n" +
+    "5. 不正解なら否定せず、バイト代・お年玉・買い物・スマホなど身近な例で気づかせる。\n" +
+    "6. 相手が「ヒント」と打ったら、答えは書かずヒントを1つだけ出す。\n" +
+    "7. 1回のメッセージは原則200文字以内。数式や記号より言葉と具体例で。\n" +
+    "8. 自力で説明できたと判断したら「よくできました！」と言い、要点を相手自身の言葉で3行にまとめさせて完了にする。\n" +
+    "理想例: 設問1「バイト代＝時給×時間。時給1200円のまま4→5時間。いくら増える？なぜ？」→ 正解なら設問2「今度は8時間固定で時給1200→1300円。いくら増える？設問1の答えと比べて増え方の仕組みの違いは？」";
+
+  // ---------- 現在の記事本文を読み込んで文脈にする ----------
+  function loadPageContext() {
+    if (pageContext !== null || !unitFile) {
+      return Promise.resolve(pageContext || "");
+    }
+    pageContext = ""; // 2重ロード防止
+    return fetch(location.href)
+      .then(function (r) { return r.text(); })
+      .then(function (html) {
+        var doc = new DOMParser().parseFromString(html, "text/html");
+        var art = doc.querySelector(".md-content__inner") || doc.querySelector("article");
+        pageContext = art ? art.innerText.slice(0, 6000) : "";
+        return pageContext;
+      })
+      .catch(function () { pageContext = ""; return ""; });
   }
+
+  function buildMessages() {
+    var sys = SYSTEM;
+    if (unitTitle) {
+      sys += "\n\n【いま学んでいるUnit】" + unitTitle + "（" + unitFile + "）";
+    }
+    if (pageContext) {
+      sys += "\n\n【このUnitの本文（必要なら参照してよい）】\n" + pageContext.slice(0, 4000);
+    }
+    var messages = [{ role: "system", content: sys }];
+    var h = history.slice(-30);
+    for (var i = 0; i < h.length; i++) { messages.push(h[i]); }
+    if (messages[messages.length - 1].role !== "user") {
+      messages.push({
+        role: "user",
+        content: "このUnitを学び終えました。私の理解を確かめるために、ソクラテス式に質問を始めてください。まず最初の質問を1つだけください。"
+      });
+    }
+    return messages;
+  }
+
+  // ---------- DeepSeek へ直接リクエスト ----------
   function post() {
     setBusy(true);
     var startedAt = Date.now();
@@ -111,60 +177,71 @@
       think.textContent = "🧠 思考中… " + sec + "秒";
     }, 1000);
 
-    function cleanupTimer() { clearInterval(timer); }
+    function cleanup() { clearInterval(timer); }
     function taken() { return Math.max(1, Math.round((Date.now() - startedAt) / 1000)); }
 
-    fetch(API + "/api/tutor", {
+    fetch(DS_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ unit_file: unitFile, history: history })
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + getKey()
+      },
+      body: JSON.stringify({
+        model: DS_MODEL,
+        messages: buildMessages(),
+        temperature: 0.7,
+        max_tokens: 700,
+        stream: false
+      })
     })
       .then(function (res) {
         return res.json().then(function (data) {
-          if (!res.ok) { throw new Error(data.error || ("HTTP " + res.status)); }
+          if (!res.ok) {
+            var err = new Error(
+              (data && data.error && data.error.message) || ("HTTP " + res.status)
+            );
+            err.status = res.status;
+            throw err;
+          }
           return data;
         });
       })
       .then(function (data) {
-        cleanupTimer();
+        cleanup();
         if (think.parentNode) { think.parentNode.removeChild(think); }
         addMeta("⏱ " + taken() + " 秒間思考しました");
-        addMsg("ai", data.reply);
-        history.push({ role: "assistant", content: data.reply });
+        var reply = data.choices[0].message.content.trim();
+        addMsg("ai", reply);
+        history.push({ role: "assistant", content: reply });
       })
       .catch(function (err) {
-        cleanupTimer();
+        cleanup();
         if (think.parentNode) { think.parentNode.removeChild(think); }
-        var msg;
-        if (err && err.name === "TypeError") {
-          // fetch 自体が失敗（サーバー未起動 or ブラウザの通信制限）
-          msg =
-            "⚠️ 家庭教師サーバーに接続できません（Failed to fetch）。\n" +
-            "① サーバーが起動しているか確認してください：\n" +
-            "     .venv/bin/uvicorn tutor.app:app --port 8001\n" +
-            "② https（GitHub Pages）で開いている場合、ブラウザがローカル通信をブロックすることがあります。\n" +
-            "     ローカルで「mkdocs serve」を起動し、\n" +
-            "     http://127.0.0.1:8000/units/p1/p1-03/ のように http で開いてください。";
+        if (err.status === 401) {
+          setKey("");
+          keybar.hidden = false;
+          addNote("APIキーが無効のようです。上の欄に正しいキーを貼って「保存」してください。");
         } else {
-          msg = "エラー: " + (err && err.message ? err.message : String(err));
+          addNote("エラー: " + (err.message || err));
         }
-        addNote(msg);
       })
       .then(function () { setBusy(false); });
   }
+
+  // ---------- 会話 ----------
+  function startChat() {
+    history = [];
+    started = true;
+    addMsg("user", "▶ このUnitの理解度チェックを開始");
+    history.push({
+      role: "user",
+      content: "このUnitを学び終えました。私の理解を確かめるために、ソクラテス式に質問を始めてください。まず最初の質問を1つだけください。"
+    });
+    loadPageContext().then(function () { post(); });
+  }
   function sendUser(text) {
     if (busy) { return; }
-    if (!history.length) {
-      // 開始: ソクラテス式の最初の質問を1つ引き出す
-      history.push({
-        role: "user",
-        content: "このUnitを学び終えました。私の理解を確かめるために、ソクラテス式に質問を始めてください。まず最初の質問を1つだけください。"
-      });
-      addMsg("user", "▶ このUnitの理解度チェックを開始");
-      started = true;
-      post();
-      return;
-    }
+    if (!history.length) { startChat(); return; }
     if (!text.trim()) { return; }
     addMsg("user", text);
     history.push({ role: "user", content: text });
@@ -173,25 +250,28 @@
 
   // ---------- イベント ----------
   $("tw-fab").addEventListener("click", function () {
-    var isOpen = !panel.hidden;
-    panel.hidden = isOpen;
-    if (!panel.hidden && !started) {
-      apiStatus(function (s) {
-        if (s && s.key_set) {
-          sendUser("");
-        } else {
-          addNote(
-            "⚠️ 家庭教師サーバーに接続できません。\n" +
-            "① ローカルでサーバーを起動してください：\n" +
-            "    .venv/bin/uvicorn tutor.app:app --port 8001\n" +
-            "② https（GitHub Pages）で開いている場合は、ブラウザがローカル通信をブロックします。\n" +
-            "    「mkdocs serve」を起動し、http://127.0.0.1:8000/ で開いてください。"
-          );
-        }
-      });
+    if (!panel.hidden) { panel.hidden = true; return; }
+    panel.hidden = false;
+    if (history.length) { return; } // 会話継続中はそのまま表示
+    clearBody();
+    if (!getKey()) {
+      keybar.hidden = false;
+      addNote("はじめに、上の欄に DeepSeek のAPIキーを貼り付けて「保存」してください。\n（キーは platform.deepseek.com で発行。このブラウザにのみ保存されます）");
+      return;
     }
+    startChat();
   });
   $("tw-close").addEventListener("click", function () { panel.hidden = true; });
+
+  $("tw-key-save").addEventListener("click", function () {
+    var v = $("tw-key-input").value;
+    if (!v.trim()) { return; }
+    setKey(v);
+    $("tw-key-input").value = "";
+    keybar.hidden = true;
+    clearBody();
+    startChat();
+  });
 
   $("tw-send").addEventListener("click", function () {
     var v = $("tw-input").value;
@@ -207,7 +287,14 @@
   });
   document.querySelectorAll("#tw-panel .tw-quick button").forEach(function (btn) {
     btn.addEventListener("click", function () {
-      sendUser(btn.getAttribute("data-q"));
+      var q = btn.getAttribute("data-q");
+      if (q.indexOf("最初の質問からやり直し") >= 0) {
+        history = [];
+        clearBody();
+        startChat();
+      } else {
+        sendUser(q);
+      }
     });
   });
 })();

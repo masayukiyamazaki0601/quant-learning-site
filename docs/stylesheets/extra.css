@@ -227,3 +227,21 @@
   #tw-panel { right: 8px; left: 8px; width: auto; bottom: 96px; }
 }
 
+/* キー設定バー（初回のみ表示） */
+#tw-panel .tw-keybar {
+  padding: 8px 10px; background: #fdf6e9;
+  border-bottom: 1px solid #e6dcc4;
+}
+#tw-panel .tw-keyrow { display: flex; gap: 6px; }
+#tw-panel .tw-keyrow input {
+  flex: 1; min-width: 0; font-family: inherit; font-size: 0.8rem;
+  padding: 7px 9px; border: 1px solid #d5ccb4; border-radius: 8px; color: #16263b;
+}
+#tw-panel .tw-keyrow button {
+  background: #a8793b; color: #fff; border: none; border-radius: 8px;
+  padding: 0 14px; font-weight: 700; cursor: pointer; font-family: inherit;
+}
+#tw-panel .tw-keynote {
+  font-size: 10px; color: #8b6a34; margin-top: 5px; line-height: 1.6;
+}
+
