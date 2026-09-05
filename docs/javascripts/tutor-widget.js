@@ -135,7 +135,20 @@
       .catch(function (err) {
         cleanupTimer();
         if (think.parentNode) { think.parentNode.removeChild(think); }
-        addNote("エラー: " + err.message);
+        var msg;
+        if (err && err.name === "TypeError") {
+          // fetch 自体が失敗（サーバー未起動 or ブラウザの通信制限）
+          msg =
+            "⚠️ 家庭教師サーバーに接続できません（Failed to fetch）。\n" +
+            "① サーバーが起動しているか確認してください：\n" +
+            "     .venv/bin/uvicorn tutor.app:app --port 8001\n" +
+            "② https（GitHub Pages）で開いている場合、ブラウザがローカル通信をブロックすることがあります。\n" +
+            "     ローカルで「mkdocs serve」を起動し、\n" +
+            "     http://127.0.0.1:8000/units/p1/p1-03/ のように http で開いてください。";
+        } else {
+          msg = "エラー: " + (err && err.message ? err.message : String(err));
+        }
+        addNote(msg);
       })
       .then(function () { setBusy(false); });
   }
@@ -168,10 +181,11 @@
           sendUser("");
         } else {
           addNote(
-            "⚠️ 家庭教師サーバーが起動していないか、APIキーが未設定です。\n" +
-            "使うにはローカルで起動してください：\n" +
-            "  .venv/bin/uvicorn tutor.app:app --port 8001\n" +
-            "（詳細は README の「AI 家庭教師」を参照）"
+            "⚠️ 家庭教師サーバーに接続できません。\n" +
+            "① ローカルでサーバーを起動してください：\n" +
+            "    .venv/bin/uvicorn tutor.app:app --port 8001\n" +
+            "② https（GitHub Pages）で開いている場合は、ブラウザがローカル通信をブロックします。\n" +
+            "    「mkdocs serve」を起動し、http://127.0.0.1:8000/ で開いてください。"
           );
         }
       });
