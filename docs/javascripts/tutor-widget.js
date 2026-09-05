@@ -189,6 +189,21 @@
   applySavedPos($("tw-fab"), FAB_POS);
   makeDraggable(panel, panel.querySelector(".tw-head"), PANEL_POS, true);
   makeDraggable($("tw-fab"), null, FAB_POS, false);
+
+  // ダブルクリックで初期位置（右下）に戻す
+  function resetPos(el, k) {
+    localStorage.removeItem(k);
+    el.style.left = "";
+    el.style.top = "";
+    el.style.right = "";
+    el.style.bottom = "";
+  }
+  $("tw-fab").addEventListener("dblclick", function () {
+    resetPos($("tw-fab"), FAB_POS);
+  });
+  panel.querySelector(".tw-head").addEventListener("dblclick", function () {
+    resetPos(panel, PANEL_POS);
+  });
     var SYSTEM =
     "あなたは個人学習サイト「Quant Learning」のソクラテス式家庭教師です。\n" +
     "相手は「中学校を卒業した数学の知識」しか持たない初心者です。\n" +
