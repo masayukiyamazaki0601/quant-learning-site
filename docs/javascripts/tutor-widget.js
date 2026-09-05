@@ -113,6 +113,82 @@
 
   var panel = $("tw-panel");
   var keybar = $("tw-keybar");
+
+  // ---------- ドラッグで移動（位置は localStorage に記憶） ----------
+  var FAB_POS = "quant_tw_fab_pos";
+  var PANEL_POS = "quant_tw_panel_pos";
+  function readPos(k) {
+    try {
+      var d = JSON.parse(localStorage.getItem(k));
+      if (d && typeof d.left === "number" && typeof d.top === "number") { return d; }
+    } catch (e) { /* ignore */ }
+    return null;
+  }
+  function writePos(k, v) {
+    try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* ignore */ }
+  }
+  function clampPos(el, left, top) {
+    var r = el.getBoundingClientRect();
+    var w = r.width || 320;
+    var h = r.height || 300;
+    var maxL = Math.max(4, window.innerWidth - w - 4);
+    var maxT = Math.max(4, window.innerHeight - h - 4);
+    return { left: Math.min(Math.max(left, 4), maxL), top: Math.min(Math.max(top, 4), maxT) };
+  }
+  function applySavedPos(el, k) {
+    var p = readPos(k);
+    if (!p) { return; }
+    var c = clampPos(el, p.left, p.top);
+    el.style.left = c.left + "px";
+    el.style.top = c.top + "px";
+    el.style.right = "auto";
+    el.style.bottom = "auto";
+  }
+  function makeDraggable(el, handle, key, allowClickThrough) {
+    var dragging = false, sx = 0, sy = 0, ox = 0, oy = 0;
+    handle = handle || el;
+    handle.addEventListener("pointerdown", function (e) {
+      if (e.button !== undefined && e.button !== 0) { return; }
+      if (allowClickThrough && e.target.closest && e.target.closest("#tw-close")) { return; }
+      dragging = true;
+      sx = e.clientX; sy = e.clientY;
+      var r = el.getBoundingClientRect();
+      ox = r.left; oy = r.top;
+      el.style.right = "auto";
+      el.style.bottom = "auto";
+      el.style.left = ox + "px";
+      el.style.top = oy + "px";
+      document.body.style.userSelect = "none";
+      try { el.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+      e.preventDefault();
+    });
+    el.addEventListener("pointermove", function (e) {
+      if (!dragging) { return; }
+      var c = clampPos(el, ox + (e.clientX - sx), oy + (e.clientY - sy));
+      el.style.left = c.left + "px";
+      el.style.top = c.top + "px";
+    });
+    function endDrag(e) {
+      if (!dragging) { return; }
+      dragging = false;
+      document.body.style.userSelect = "";
+      try { el.releasePointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+      var moved = Math.abs(e.clientX - sx) > 4 || Math.abs(e.clientY - sy) > 4;
+      if (moved) {
+        var r = el.getBoundingClientRect();
+        writePos(key, { left: r.left, top: r.top });
+        el.__dragged = true; // ドラッグ直後の click を無効化するフラグ
+        setTimeout(function () { el.__dragged = false; }, 80);
+      }
+    }
+    el.addEventListener("pointerup", endDrag);
+    el.addEventListener("pointercancel", endDrag);
+  }
+
+  applySavedPos(panel, PANEL_POS);
+  applySavedPos($("tw-fab"), FAB_POS);
+  makeDraggable(panel, panel.querySelector(".tw-head"), PANEL_POS, true);
+  makeDraggable($("tw-fab"), null, FAB_POS, false);
     var SYSTEM =
     "あなたは個人学習サイト「Quant Learning」のソクラテス式家庭教師です。\n" +
     "相手は「中学校を卒業した数学の知識」しか持たない初心者です。\n" +
@@ -275,6 +351,7 @@
 
   // ---------- イベント ----------
   $("tw-fab").addEventListener("click", function () {
+    if ($("tw-fab").__dragged) { return; } // ドラッグ直後は開閉しない
     if (!panel.hidden) { panel.hidden = true; return; }
     panel.hidden = false;
     if (history.length) { return; } // 会話継続中はそのまま表示

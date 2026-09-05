@@ -172,9 +172,26 @@
 .mm-item strong { display: inline-block; min-width: 3.2em; }
 @media (max-width: 720px) { .market-map { grid-template-columns: 1fr; } }
 
-/* ---------- AI家庭教師ウィジェット（全ページ右下） ---------- */
+/* ---------- AI家庭教師ウィジェット ----------
+   サイズ・場所は下の :root の数値を変えるだけ！
+   （例）左に移動: --tw-panel-right:auto; --tw-panel-left:16px;
+   （例）大きく:   --tw-panel-width:500px; --tw-panel-height:700px; */
+:root {
+  /* 🎓 ボタンの位置 */
+  --tw-fab-right: 16px;
+  --tw-fab-left: auto;
+  --tw-fab-bottom: 58px;
+  /* チャット欄（パネル）の位置 */
+  --tw-panel-right: 16px;
+  --tw-panel-left: auto;
+  --tw-panel-bottom: 110px;
+  /* チャット欄のサイズ */
+  --tw-panel-width: 400px;
+  --tw-panel-height: 620px;
+}
 #tw-fab {
-  position: fixed; right: 16px; bottom: 58px; z-index: 180;
+  position: fixed; right: var(--tw-fab-right); left: var(--tw-fab-left);
+  bottom: var(--tw-fab-bottom); z-index: 180;
   font-family: inherit; font-size: 0.82rem; font-weight: 700;
   color: #fff; background: var(--md-primary-fg-color, #16263b);
   border: none; border-radius: 999px; padding: 9px 16px;
@@ -182,9 +199,10 @@
 }
 #tw-fab:hover { opacity: 0.88; }
 #tw-panel {
-  position: fixed; right: 16px; bottom: 110px; z-index: 180;
-  width: min(400px, calc(100vw - 32px));
-  height: min(620px, calc(100vh - 130px));
+  position: fixed; right: var(--tw-panel-right); left: var(--tw-panel-left);
+  bottom: var(--tw-panel-bottom); z-index: 180;
+  width: min(var(--tw-panel-width), calc(100vw - 32px));
+  height: min(var(--tw-panel-height), calc(100vh - 130px));
   display: flex; flex-direction: column;
   background: #f7f4ea; border: 1px solid #dcd5c2; border-radius: 14px;
   overflow: hidden; box-shadow: 0 10px 40px rgba(16, 28, 46, 0.25);
@@ -243,5 +261,12 @@
 }
 #tw-panel .tw-keynote {
   font-size: 10px; color: #8b6a34; margin-top: 5px; line-height: 1.6;
+}
+
+/* ドラッグ移動対応 */
+#tw-fab { cursor: move; touch-action: none; }
+#tw-panel .tw-head {
+  cursor: move; user-select: none; -webkit-user-select: none;
+  touch-action: none;
 }
 
