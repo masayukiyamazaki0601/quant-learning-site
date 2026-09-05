@@ -289,60 +289,62 @@
     };
   }
 
-  /* ---------- ⑥ 債券のデュレーション：金利を上げると価格が下がる ---------- */
-  function durationDef() {
-    var rates = [0.01, 0.03, 0.05, 0.08, 0.10];
-    var YEARS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-    function calc(r) {
-      var pvs = [], weighted = 0, price = 0;
+  /* ---------- ⑥ 金利を上げると債券価格が下がる（2本の債券で比較） ---------- */
+  function rateDef() {
+    var xs = [], a = [], b = [];
+    for (var x = 0.5; x <= 10.05; x += 0.1) {
+      var r = x / 100;
+      xs.push(x);
+      var pa = 0;
       for (var t = 1; t <= 10; t++) {
-        var cf = (t === 10) ? 105 : 5; // 毎年5万円＋10年目に額面100万円
-        var pv = cf / Math.pow(1 + r, t);
-        pvs.push(+pv.toFixed(3));
-        price += pv;
-        weighted += t * pv;
+        var cf = (t === 10) ? 105 : 5;
+        pa += cf / Math.pow(1 + r, t);
       }
-      return { pvs: pvs, price: price, dur: weighted / price };
+      a.push(pa);
+      b.push(100 / Math.pow(1 + r, 10));
     }
+    function priceA(r) {
+      var pa = 0;
+      for (var t = 1; t <= 10; t++) {
+        var cf = (t === 10) ? 105 : 5;
+        pa += cf / Math.pow(1 + r, t);
+      }
+      return pa;
+    }
+    function priceB(r) { return 100 / Math.pow(1 + r, 10); }
     function status(r) {
-      var c = calc(r);
-      return "金利 " + (r * 100) + "% → 債券の価格 ≈ " + c.price.toFixed(1) +
-             "万円 / デュレーション ≈ " + c.dur.toFixed(1) + "年";
+      return "金利 " + (r * 100) + "% → 債券A(毎年5万円) ≈ " + priceA(r).toFixed(1) +
+             "万円 / 債券B(10年一括) ≈ " + priceB(r).toFixed(1) + "万円";
     }
-    function figure(r) {
-      var c = calc(r);
-      return {
-        data: [{
-          x: YEARS, y: c.pvs, type: "bar",
-          marker: { color: COL_BRASS, opacity: 0.7 }
-        }],
-        layout: {
-          margin: { l: 52, r: 16, t: 46, b: 46 },
-          paper_bgcolor: "#FFFFFF", plot_bgcolor: "#FFFFFF",
-          font: { color: COL_INK, size: 13 },
-          xaxis: { range: [0.3, 10.7], title: "年目", dtick: 1 },
-          yaxis: { title: "各年の現在価値（万円）" },
-          showlegend: false,
-          annotations: [{
-            xref: "paper", yref: "paper", x: 0.01, y: 1.16,
-            xanchor: "left", yanchor: "top", showarrow: false, text: status(r)
-          }],
-          shapes: [{
-            type: "line", x0: c.dur, x1: c.dur, y0: 0, y1: 1, yref: "paper",
-            line: { color: COL_RED, width: 3, dash: "dot" }
-          }]
-        }
-      };
-    }
+    var steps = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
     return {
-      init: function () { return figure(rates[0]); },
-      count: rates.length,
-      status: function (i) { return status(rates[i]); },
-      tick: function (i) {
-        var f = figure(rates[i]);
+      init: function () {
         return {
-          sets: [{ index: 0, data: f.data[0] }],
-          layout: { annotations: f.layout.annotations, shapes: f.layout.shapes }
+          data: [
+            { x: xs, y: a, mode: "lines", name: "債券A：毎年5万円の10年債", line: { color: COL_INK, width: 3 } },
+            { x: xs, y: b, mode: "lines", name: "債券B：10年一括100万円", line: { color: COL_RED, width: 3 } },
+            { x: [1], y: [priceA(0.01)], mode: "markers", marker: { color: COL_INK, size: 11 } },
+            { x: [1], y: [priceB(0.01)], mode: "markers", marker: { color: COL_RED, size: 11 } }
+          ],
+          layout: {
+            margin: { l: 56, r: 16, t: 46, b: 46 },
+            paper_bgcolor: "#FFFFFF", plot_bgcolor: "#FFFFFF",
+            font: { color: COL_INK, size: 13 },
+            xaxis: { range: [0, 11], title: "世の中の金利（%）", dtick: 1 },
+            yaxis: { range: [0, 150], title: "債券の価格（万円）" },
+            legend: { orientation: "h", y: 1.16, x: 0 }
+          }
+        };
+      },
+      count: steps.length,
+      status: function (i) { return status(steps[i] / 100); },
+      tick: function (i) {
+        var r = steps[i] / 100;
+        return {
+          sets: [
+            { index: 2, data: { x: [r * 100], y: [priceA(r)] } },
+            { index: 3, data: { x: [r * 100], y: [priceB(r)] } }
+          ]
         };
       }
     };
@@ -355,7 +357,7 @@
     "chart-taylor": taylorDef(),
     "chart-wage": wageDef(),
     "chart-pv": pvDef(),
-    "chart-duration": durationDef()
+    "chart-rate": rateDef()
   };
 
   /* ---------- ▶再生 コントローラー ---------- */
