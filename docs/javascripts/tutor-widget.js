@@ -195,14 +195,17 @@
       })
     })
       .then(function (res) {
-        return res.json().then(function (data) {
+        return res.text().then(function (text) {
+          var data = null;
+          try { data = JSON.parse(text); } catch (e) { data = null; }
           if (!res.ok) {
-            var err = new Error(
-              (data && data.error && data.error.message) || ("HTTP " + res.status)
-            );
+            var msg = (data && data.error && data.error.message) ||
+                      text.trim() || ("HTTP " + res.status);
+            var err = new Error(msg);
             err.status = res.status;
             throw err;
           }
+          if (!data) { throw new Error("応答を解釈できませんでした"); }
           return data;
         });
       })
@@ -217,10 +220,13 @@
       .catch(function (err) {
         cleanup();
         if (think.parentNode) { think.parentNode.removeChild(think); }
-        if (err.status === 401) {
+        if (err.status === 401 || err.status === 403) {
           setKey("");
           keybar.hidden = false;
-          addNote("APIキーが無効のようです。上の欄に正しいキーを貼って「保存」してください。");
+          addNote(
+            "🔑 APIキーが無効または未設定のようです（" + String(err.message).slice(0, 100) + "）。\n" +
+            "上の欄にキー（sk- ではじまる文字列）を貼って「保存」してください。"
+          );
         } else {
           addNote("エラー: " + (err.message || err));
         }
@@ -229,7 +235,25 @@
   }
 
   // ---------- 会話 ----------
+  function showKeyHint() {
+    keybar.hidden = false;
+    var body = $("tw-body");
+    var kids = body.children;
+    var txt = "🔑 APIキーを上の欄に貼って「保存」してください（sk- で始まる文字列）";
+    if (kids.length &&
+        kids[kids.length - 1].className === "tw-note" &&
+        kids[kids.length - 1].textContent.indexOf("APIキー") >= 0) {
+      return;
+    }
+    addNote(txt);
+  }
+  function requireKey() {
+    if (getKey()) { return true; }
+    showKeyHint();
+    return false;
+  }
   function startChat() {
+    if (!requireKey()) { return; }
     history = [];
     started = true;
     addMsg("user", "▶ このUnitの理解度チェックを開始");
@@ -241,6 +265,7 @@
   }
   function sendUser(text) {
     if (busy) { return; }
+    if (!requireKey()) { return; }
     if (!history.length) { startChat(); return; }
     if (!text.trim()) { return; }
     addMsg("user", text);
@@ -255,8 +280,7 @@
     if (history.length) { return; } // 会話継続中はそのまま表示
     clearBody();
     if (!getKey()) {
-      keybar.hidden = false;
-      addNote("はじめに、上の欄に DeepSeek のAPIキーを貼り付けて「保存」してください。\n（キーは platform.deepseek.com で発行。このブラウザにのみ保存されます）");
+      showKeyHint();
       return;
     }
     startChat();
