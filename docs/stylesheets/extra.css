@@ -26,3 +26,78 @@
   margin: 0 0 20px;
   background: rgba(168, 121, 59, 0.05);
 }
+
+/* ---------- 選択式クイズ ---------- */
+.md-typeset .qwrap {
+  border: 1px solid var(--md-default-fg-color--lightest, #ddd6c6);
+  border-radius: 10px;
+  padding: 14px 18px 14px;
+  margin: 1.6em 0;
+  background: rgba(168, 121, 59, 0.05);
+}
+.md-typeset .qwrap .qq { font-weight: 700; margin: 0.2em 0 0.8em; }
+.md-typeset .qwrap .qopts {
+  list-style: none; padding: 0; margin: 0 0 4px;
+  display: grid; gap: 8px;
+}
+.md-typeset .qwrap .qopt {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%; text-align: left;
+  font-family: inherit; font-size: 0.92rem; line-height: 1.7;
+  color: var(--md-typeset-color);
+  background: var(--md-default-bg-color);
+  border: 1px solid var(--md-default-fg-color--lightest, #d7d0bf);
+  border-radius: 8px; padding: 8px 12px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.md-typeset .qwrap .qopt:hover { border-color: var(--md-accent-fg-color); }
+.md-typeset .qwrap .qopt:disabled { cursor: default; }
+.md-typeset .qwrap .qletter {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 26px; height: 26px; border-radius: 6px;
+  background: rgba(168, 121, 59, 0.15);
+  color: var(--md-accent-fg-color--dark, #8a5f26);
+  font-weight: 700; font-size: 0.8rem; flex: 0 0 auto;
+}
+.md-typeset .qwrap .qopt.correct,
+.md-typeset .qwrap .qopt.reveal-correct {
+  border-color: #1e6f50;
+  background: rgba(30, 111, 80, 0.12);
+}
+.md-typeset .qwrap .qopt.correct .qletter,
+.md-typeset .qwrap .qopt.reveal-correct .qletter {
+  background: #1e6f50; color: #fff;
+}
+.md-typeset .qwrap .qopt.wrong {
+  border-color: #b4432f;
+  background: rgba(180, 67, 47, 0.12);
+}
+.md-typeset .qwrap .qopt.wrong .qletter {
+  background: #b4432f; color: #fff;
+}
+.md-typeset .qwrap .quiz-feedback {
+  min-height: 1.7em; font-weight: 700; margin: 8px 0 0;
+}
+.md-typeset .qwrap .quiz-feedback.ok { color: #1e6f50; }
+.md-typeset .qwrap .quiz-feedback.ng { color: #b4432f; }
+.md-typeset .qwrap details.kansetsu { margin-top: 6px; font-size: 0.9rem; }
+.md-typeset .qwrap details.kansetsu summary { cursor: pointer; font-weight: 600; }
+.md-typeset .qwrap details.kansetsu .ex-body {
+  margin-top: 8px; padding: 10px 14px;
+  background: var(--md-default-bg-color);
+  border-left: 3px solid var(--md-accent-fg-color);
+  border-radius: 0 6px 6px 0;
+}
+
+/* 効果音トグル（右下固定） */
+.quiz-sound-toggle {
+  position: fixed; right: 16px; bottom: 16px; z-index: 120;
+  font-family: inherit; font-size: 0.8rem;
+  color: var(--md-primary-bg-color, #fff);
+  background: var(--md-primary-fg-color, #16263b);
+  border: none; border-radius: 999px; padding: 8px 16px;
+  cursor: pointer; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+}
+.quiz-sound-toggle:hover { opacity: 0.85; }
+

@@ -66,6 +66,7 @@ markdown_extensions:
 
 extra_javascript:
   - javascripts/mathjax.js
+  - javascripts/quiz.js
   - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js
 
 extra:
