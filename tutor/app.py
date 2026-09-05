@@ -15,9 +15,10 @@ from pathlib import Path
 
 import httpx
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
+from starlette.middleware.base import BaseHTTPMiddleware
 
 BASE = Path(__file__).resolve().parent
 UNITS_ROOT = (BASE.parent / "docs" / "units").resolve()
@@ -28,6 +29,32 @@ load_dotenv(BASE / ".env")
 MODEL = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
 
 app = FastAPI(title="Quant Socratic Tutor")
+
+
+class TutorCORS(BaseHTTPMiddleware):
+    """ローカル専用サーバー向けCORS。
+    mkdocs serve（http://127.0.0.1:8000）や GitHub Pages（https）から
+    この家庭教師サーバーへ呼べるようにする。Private Network Access にも対応。"""
+
+    async def dispatch(self, request, call_next):
+        origin = request.headers.get("origin") or "*"
+        if request.method == "OPTIONS":
+            return Response(status_code=204, headers={
+                "Access-Control-Allow-Origin": origin,
+                "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+                "Access-Control-Allow-Headers": "Content-Type",
+                "Access-Control-Allow-Private-Network": "true",
+                "Access-Control-Max-Age": "600",
+                "Vary": "Origin",
+            })
+        response = await call_next(request)
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Private-Network"] = "true"
+        response.headers["Vary"] = "Origin"
+        return response
+
+
+app.add_middleware(TutorCORS)
 
 SYSTEM_PROMPT = """あなたは個人学習サイト「Quant Learning」のソクラテス式家庭教師です。
 相手は「中学校を卒業した数学の知識」しか持たない初心者です。

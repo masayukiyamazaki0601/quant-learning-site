@@ -43,8 +43,9 @@ cp tutor/.env.example tutor/.env
 ```
 
 - キーは https://platform.deepseek.com/ の「API Keys」で発行
-- ファイル: `tutor/app.py`（サーバー）/ `tutor/static/index.html`（画面）
+- ファイル: `tutor/app.py`（サーバー）/ `tutor/static/index.html`（専用画面）
 - ソクラテス式の指示は `app.py` の `SYSTEM_PROMPT` に集約されています（口調・深掘りの仕方などを調整可能）
+- **記事ページにも組み込み済み**：mkdocsの各ページ右下の「🎓 家庭教師に聞く」ボタンから、そのページのUnitに紐づいた対話ができます（要：tutorサーバー起動中。`mkdocs serve` と両方起動しておくこと）
 
 ## ディレクトリ構成
 
