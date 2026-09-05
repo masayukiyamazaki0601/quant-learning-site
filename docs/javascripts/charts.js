@@ -182,11 +182,87 @@
     };
   }
 
+  /* ---------- ④ バイト代ヒートマップ（多変数：時給×時間） ---------- */
+  function wageDef() {
+    var wages = [];
+    for (var w = 900; w <= 1600; w += 100) { wages.push(w); }
+    var hours = [];
+    for (var h = 1; h <= 12; h++) { hours.push(h); }
+    var z = [];
+    for (var i = 0; i < hours.length; i++) {
+      var row = [];
+      for (var j = 0; j < wages.length; j++) { row.push(wages[j] * hours[i]); }
+      z.push(row);
+    }
+    return {
+      init: function () {
+        return {
+          data: [{
+            z: z, x: wages, y: hours, type: "heatmap",
+            colorscale: [[0, "#FBF3E2"], [0.35, "#EACB94"], [0.7, "#C58B3E"], [1, "#7A5420"]],
+            colorbar: { title: { text: "バイト代(円)" } }
+          }],
+          layout: {
+            margin: { l: 46, r: 20, t: 40, b: 46 },
+            paper_bgcolor: "#FFFFFF", plot_bgcolor: "#FFFFFF",
+            font: { color: COL_INK, size: 13 },
+            xaxis: { title: "時給（円/時間）", dtick: 100 },
+            yaxis: { title: "働いた時間（時間）", dtick: 1 }
+          }
+        };
+      }
+    };
+  }
+
+  /* ---------- ⑤ 現在価値：遠いお金ほど価値が下がる ---------- */
+  function pvDef() {
+    var rates = [0.01, 0.03, 0.05, 0.10];
+    var names = ["1%", "3%", "5%", "10%"];
+    var colors = [COL_INK, COL_BRASS, COL_GREEN, COL_RED];
+    var lines = [];
+    for (var r = 0; r < rates.length; r++) {
+      var xs = [], ys = [];
+      for (var t = 1; t <= 20; t++) { xs.push(t); ys.push(100 / Math.pow(1 + rates[r], t)); }
+      lines.push({ x: xs, y: ys, mode: "lines", name: "金利 " + names[r], line: { color: colors[r], width: 2.5 } });
+    }
+    function status(t) {
+      return "「" + t + "年後にもらう100万円」のいまの価値 ≈ " +
+             (100 / Math.pow(1.05, t)).toFixed(1) + " 万円（金利5%の線上）";
+    }
+    return {
+      init: function () {
+        return {
+          data: lines.concat([
+            { x: [1], y: [100 / 1.05], mode: "markers", marker: { color: COL_GREEN, size: 11 } }
+          ]),
+          layout: {
+            margin: { l: 52, r: 16, t: 44, b: 46 },
+            paper_bgcolor: "#FFFFFF", plot_bgcolor: "#FFFFFF",
+            font: { color: COL_INK, size: 13 },
+            xaxis: { range: [0, 21], title: "受け取るまでの年数 t" },
+            yaxis: { range: [0, 105], title: "いまの価値（万円）" },
+            legend: { orientation: "h", y: 1.14, x: 0 }
+          }
+        };
+      },
+      count: 20,
+      status: status,
+      tick: function (i) {
+        var t = i + 1;
+        return {
+          sets: [{ index: 4, data: { x: [t], y: [100 / Math.pow(1.05, t)] } }]
+        };
+      }
+    };
+  }
+
   /* ---------- 図の登録（id 名で呼び出し） ---------- */
   var CH = {
     "chart-slope": slopeDef(),
     "chart-riemann": riemannDef(),
-    "chart-taylor": taylorDef()
+    "chart-taylor": taylorDef(),
+    "chart-wage": wageDef(),
+    "chart-pv": pvDef()
   };
 
   /* ---------- ▶再生 コントローラー ---------- */
@@ -239,6 +315,23 @@
         });
       });
     })(buttons[b]);
+  }
+
+  // 自動表示（plotbox に data-auto 属性がある図は、▶なしで最初から描画）
+  var autos = document.querySelectorAll(".plotbox[data-auto]");
+  for (var a = 0; a < autos.length; a++) {
+    (function (box) {
+      var el = box.querySelector(".plotly-chart");
+      if (!el) { return; }
+      var def = CH[el.id];
+      if (!def || !def.init) { return; }
+      loadPlotly(function () {
+        var base = def.init();
+        Plotly.newPlot(el, base.data, base.layout, { responsive: true, displayModeBar: false });
+        var st = box.querySelector(".plot-status");
+        if (st && def.status) { st.textContent = def.status(0); }
+      });
+    })(autos[a]);
   }
 })();
 
