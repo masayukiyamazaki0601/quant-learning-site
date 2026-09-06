@@ -114,6 +114,50 @@
   var panel = $("tw-panel");
   var keybar = $("tw-keybar");
 
+  // ---------- スマホ表示の最適化（ほぼ全画面シート＋キーボード対策） ----------
+  function isSmallScreen() { return window.innerWidth <= 560; }
+  function keyboardGap() {
+    try {
+      if (window.visualViewport && window.visualViewport.height < window.innerHeight) {
+        return window.innerHeight - Math.round(window.visualViewport.height);
+      }
+    } catch (e) { /* ignore */ }
+    return 0;
+  }
+  function refreshMobilePanel() {
+    if (!panel.classList.contains("tw-mobile")) { return; }
+    panel.style.bottom = (10 + keyboardGap()) + "px";
+  }
+  function setMobileMode(on) {
+    if (on) {
+      panel.classList.add("tw-mobile");
+      // スマホではドラッグ位置を無視してCSSレイアウトに任せる
+      panel.style.left = "";
+      panel.style.top = "";
+      panel.style.right = "";
+      panel.style.bottom = "";
+      refreshMobilePanel();
+    } else {
+      panel.classList.remove("tw-mobile");
+      panel.style.bottom = "";
+    }
+  }
+  if (window.visualViewport && window.visualViewport.addEventListener) {
+    window.visualViewport.addEventListener("resize", refreshMobilePanel);
+  }
+  window.addEventListener("resize", function () {
+    if (!panel.hidden) { setMobileMode(isSmallScreen()); }
+  });
+  ["tw-input", "tw-key-input"].forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el) {
+      el.addEventListener("focus", refreshMobilePanel);
+      el.addEventListener("blur", function () {
+        setTimeout(refreshMobilePanel, 300);
+      });
+    }
+  });
+
   // ---------- ドラッグで移動（位置は localStorage に記憶） ----------
   var FAB_POS = "quant_tw_fab_pos";
   var PANEL_POS = "quant_tw_panel_pos";
@@ -402,6 +446,7 @@
     if ($("tw-fab").__dragged) { return; } // ドラッグ直後は開閉しない
     if (!panel.hidden) { panel.hidden = true; return; }
     panel.hidden = false;
+    setMobileMode(isSmallScreen());
     if (history.length) { return; } // 会話継続中はそのまま表示
     // 保存済みの会話があれば続きから再開（ページを離れても大丈夫）
     var saved = loadSavedChat();

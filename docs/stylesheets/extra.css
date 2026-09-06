@@ -277,3 +277,20 @@
   touch-action: none;
 }
 
+/* ---------- スマホ最適化 ---------- */
+#tw-panel .tw-head small {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  max-width: 60%;
+}
+@media (max-width: 560px) {
+  /* スマホではチャット欄を「ほぼ全画面シート」にする（JSで .tw-mobile 付与） */
+  #tw-panel.tw-mobile {
+    left: 10px; right: 10px; top: 10px; bottom: 10px;
+    width: auto; height: auto;
+    font-size: 15px;
+  }
+  #tw-panel.tw-mobile .tw-body { font-size: 15px; }
+  #tw-panel.tw-mobile .tw-input input { font-size: 16px; } /* iOS自動ズーム防止 */
+  #tw-fab { font-size: 0.9rem; padding: 12px 18px; }
+}
+
