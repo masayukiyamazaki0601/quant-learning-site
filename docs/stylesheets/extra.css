@@ -283,10 +283,12 @@
   max-width: 60%;
 }
 @media (max-width: 560px) {
-  /* スマホではチャット欄を「ほぼ全画面シート」にする（JSで .tw-mobile 付与） */
+  /* スマホでは「下から出るボトムシート」サイズ（高さは画面の6割ほど） */
   #tw-panel.tw-mobile {
-    left: 10px; right: 10px; top: 10px; bottom: 10px;
-    width: auto; height: auto;
+    left: 12px; right: 12px; top: auto; bottom: 10px;
+    width: auto;
+    height: 62vh;                 /* 古いブラウザ用フォールバック */
+    height: min(64dvh, 560px);
     font-size: 15px;
   }
   #tw-panel.tw-mobile .tw-body { font-size: 15px; }

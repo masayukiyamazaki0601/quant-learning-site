@@ -37,7 +37,7 @@ theme:
     logo: material/chart-line-variant
 
 extra_css:
-  - stylesheets/extra.css?v=3
+  - stylesheets/extra.css?v=4
 
 plugins:
   - search
@@ -67,7 +67,7 @@ markdown_extensions:
 extra_javascript:
   - javascripts/mathjax.js?v=2
   - javascripts/charts.js?v=7
-  - javascripts/tutor-widget.js?v=8
+  - javascripts/tutor-widget.js?v=9
   - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js
 
 extra:

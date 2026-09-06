@@ -126,7 +126,15 @@
   }
   function refreshMobilePanel() {
     if (!panel.classList.contains("tw-mobile")) { return; }
-    panel.style.bottom = (10 + keyboardGap()) + "px";
+    var gap = keyboardGap();
+    panel.style.bottom = "10px";
+    if (gap > 0 && window.visualViewport) {
+      // キーボード表示中は、見えている範囲に合わせて高さを縮める
+      var h = Math.round(window.visualViewport.height) - 90;
+      if (h > 200) { panel.style.height = h + "px"; }
+    } else {
+      panel.style.height = ""; // CSS（64dvh）に戻す
+    }
   }
   function setMobileMode(on) {
     if (on) {
