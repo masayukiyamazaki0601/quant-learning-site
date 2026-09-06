@@ -350,6 +350,33 @@
     };
   }
 
+  /* ---------- ⑦ +10%と-10%を「足し算」すると0%?（本当は-1%） ---------- */
+  function returnDef() {
+    return {
+      init: function () {
+        return {
+          data: [{
+            orientation: "h",
+            y: ["実際のトータル（100→110→99）", "「+10%と-10%」を足し算した結果"],
+            x: [-1, 0],
+            type: "bar",
+            text: ["-1%（本当の答え）", "0%（これは間違い）"],
+            textposition: "outside",
+            marker: { color: ["#1E6F50", "#93A2B4"] }
+          }],
+          layout: {
+            margin: { l: 250, r: 24, t: 40, b: 46 },
+            paper_bgcolor: "#FFFFFF", plot_bgcolor: "#FFFFFF",
+            font: { color: COL_INK, size: 13 },
+            xaxis: { range: [-1.8, 1.4], title: "トータルリターン（%）", dtick: 0.5 },
+            yaxis: { autorange: "reversed" },
+            showlegend: false
+          }
+        };
+      }
+    };
+  }
+
   /* ---------- 図の登録（id 名で呼び出し） ---------- */
   var CH = {
     "chart-slope": slopeDef(),
@@ -357,7 +384,8 @@
     "chart-taylor": taylorDef(),
     "chart-wage": wageDef(),
     "chart-pv": pvDef(),
-    "chart-rate": rateDef()
+    "chart-rate": rateDef(),
+    "chart-return": returnDef()
   };
 
   /* ---------- ▶再生 コントローラー ---------- */
