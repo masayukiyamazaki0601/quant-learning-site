@@ -377,6 +377,38 @@
     };
   }
 
+  /* ---------- ⑧ 検査の「陽性」の内訳（本当に病気 vs 偽陽性） ---------- */
+  function bayesDef() {
+    return {
+      init: function () {
+        return {
+          data: [
+            { type: "bar", x: ["陽性だった人（計30人）"], y: [10],
+              name: "本当に病気（約10人）", marker: { color: COL_RED } },
+            { type: "bar", x: ["陽性だった人（計30人）"], y: [20],
+              name: "健康なのに陽性（約20人）", marker: { color: "#93A2B4" } }
+          ],
+          layout: {
+            margin: { l: 46, r: 16, t: 50, b: 50 },
+            paper_bgcolor: "#FFFFFF", plot_bgcolor: "#FFFFFF",
+            font: { color: COL_INK, size: 13 },
+            barmode: "stack",
+            xaxis: { title: "" },
+            yaxis: { range: [0, 38], title: "人数" },
+            showlegend: true,
+            legend: { orientation: "h", y: 1.15, x: 0 },
+            annotations: [{
+              xref: "paper", yref: "paper", x: 0.5, y: 0.62,
+              showarrow: false,
+              text: "陽性でも本当に病気なのは 約3人に1人（≈33%）",
+              font: { size: 14, color: COL_INK }
+            }]
+          }
+        };
+      }
+    };
+  }
+
   /* ---------- 図の登録（id 名で呼び出し） ---------- */
   var CH = {
     "chart-slope": slopeDef(),
@@ -385,7 +417,8 @@
     "chart-wage": wageDef(),
     "chart-pv": pvDef(),
     "chart-rate": rateDef(),
-    "chart-return": returnDef()
+    "chart-return": returnDef(),
+    "chart-bayes": bayesDef()
   };
 
   /* ---------- ▶再生 コントローラー ---------- */
